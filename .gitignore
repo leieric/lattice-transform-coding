@@ -1,5 +1,6 @@
 **/__pycache__
 trained/old/
+trained/
 trained_save/
 deprecated/
 saved_lattices/

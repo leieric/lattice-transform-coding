@@ -5,7 +5,6 @@ python LTC/train_compander.py --n 2 --d 2 --dy 2 --n_train_samples 1000000 --num
 python LTC/train_compander.py --n 2 --d 2 --dy 2 --n_train_samples 1000000 --num_eval_samples 1000000 --model_name "LatticeCompander" --data_name "Gaussian" --transform_name "MLP" --eb_name "Flow_RealNVP" --lattice_name "HexagonalUnitVol" --lam_sweep 0.5 0.75 1 1.5 2 4 8 --epochs 2 --save
 
 # D^*_4 Lattice
-# python train_compander.py --n 4 --num_eval_samples 1000000 --transform_name "LinearNoBias" --lattice_name "DnDualUnitVol" --lam_sweep 0.5 0.75 1 1.5 2 4 8
 python LTC/train_compander.py --n 4 --d 4 --dy 4 --n_train_samples 1000000 --num_eval_samples 200000 --model_name "LatticeCompander" --data_name "Gaussian" --transform_name "LinearNoBias" --eb_name "Flow_RealNVP" --lattice_name "DnDualUnitVol" --lam_sweep 0.5 0.75 1 1.5 2 4 8 --epochs 2 --save
 
 # E_8 Lattice
