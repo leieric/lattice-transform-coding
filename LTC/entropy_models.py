@@ -12,8 +12,8 @@ from torch import Tensor
 from compressai.entropy_models import EntropyModel
 from compressai.ops import LowerBound
 # from MAF.maf import MAF
-from flows.models import NormalizingFlowModel
-from flows.flows import RealNVP, RealNVP2, MAF, NSF_CL, NSF_AR
+from LTC.flows.models import NormalizingFlowModel
+from LTC.flows.flows import RealNVP, RealNVP2, MAF, NSF_CL, NSF_AR
 
 class EntropyBottleneck(EntropyModel):
     r"""

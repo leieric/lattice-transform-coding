@@ -40,8 +40,6 @@ def get_loader(args, n_samples, drop_last=False, train=False):
         return Speech(args.batch_size, train, args.data_root)
     elif args.data_name == 'SpeechBlock':
         return SpeechBlock(args.n, args.batch_size, train, args.data_root)
-    elif args.data_name == 'MNIST':
-        return MNIST_images(args.batch_size, train, args.data_root)
     else:
         raise Exception("invalid data_name")
 
@@ -169,7 +167,7 @@ class BananaBlockDataset(Dataset):
         return Xi, 0
     
 
-def Physics(batch_size, train=True, data_root='/home/Shared/other_datasets'):
+def Physics(batch_size, train=True, data_root='.'):
     X_train = np.load(f'{data_root}/physics/ppzee-split=train.npy')
     # mean = np.mean(X_train, axis=0)
     # std = np.std(X_train, axis=0)
@@ -184,7 +182,7 @@ def Physics(batch_size, train=True, data_root='/home/Shared/other_datasets'):
     loader = torch.utils.data.DataLoader(dset, batch_size=batch_size, num_workers=4)
     return loader
 
-def PhysicsBlock(n, batch_size, train=True, data_root='/home/Shared/other_datasets'):
+def PhysicsBlock(n, batch_size, train=True, data_root='.'):
     X_train = np.load(f'{data_root}/physics/ppzee-split=train.npy')
     # mean = np.mean(X_train, axis=0)
     # std = np.std(X_train, axis=0)
@@ -202,7 +200,7 @@ def PhysicsBlock(n, batch_size, train=True, data_root='/home/Shared/other_datase
     return loader
     
 
-def Speech(batch_size, train=True, data_root='/home/Shared/other_datasets'):
+def Speech(batch_size, train=True, data_root='.'):
     X_train = np.load(f'{data_root}/speech/stft-split=train.npy')
     # mean = np.mean(X_train, axis=0)
     if train:
@@ -217,7 +215,7 @@ def Speech(batch_size, train=True, data_root='/home/Shared/other_datasets'):
     loader = torch.utils.data.DataLoader(dset, batch_size=batch_size, num_workers=4)
     return loader
 
-def SpeechBlock(n, batch_size, train=True, data_root='/home/Shared/other_datasets'):
+def SpeechBlock(n, batch_size, train=True, data_root='.'):
     X_train = np.load(f'{data_root}/speech/stft-split=train.npy')
     # mean = np.mean(X_train, axis=0)
     if train:
@@ -234,7 +232,3 @@ def SpeechBlock(n, batch_size, train=True, data_root='/home/Shared/other_dataset
     dset = torch.utils.data.TensorDataset(X) # [n_samples, 2]
     loader = torch.utils.data.DataLoader(dset, batch_size=batch_size, num_workers=4)
     return loader
-
-def MNIST_images(batch_size, train=True, data_root='/home/Shared/image_datasets'):
-    dset = MNIST(root=data_root, train=train, download=True, transform=transforms.ToTensor())
-    return torch.utils.data.DataLoader(dset, batch_size=batch_size, num_workers=4, drop_last=True)

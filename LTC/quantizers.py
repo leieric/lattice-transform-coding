@@ -40,7 +40,23 @@ def get_lattice(name, d):
         return Leech128ProductQuantizerUnitVol(d, n_product)
     else:
         raise Exception("Invalid Lattice name")
+    
+class SquareQuantizer(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+        self.G = self.init_generator_matrix(dim)
+        self.G = nn.Parameter(self.G, requires_grad=False)
+    
+    def init_generator_matrix(self, dim):
+        """
+        Initialize lattice quantizer's generator matrix.
+        """
+        return torch.eye(dim)
 
+    def forward(self, x):
+        # [batch_size, dim]
+        return torch.round(x)
 
 class HexagonalQuantizer(nn.Module):
     def __init__(self, dim):
@@ -233,6 +249,73 @@ class DnQuantizer(nn.Module):
         f_x[idx_g_even, :] = g_x[idx_g_even, :]
         return f_x
 
+class DnDualQuantizer(nn.Module):
+    """
+    D_n^* quantizer.
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+        self.G = self.init_generator_matrix(dim)
+    
+    def init_generator_matrix(self, dim):
+        """
+        Initialize lattice quantizer's generator matrix.
+        """
+        M = torch.eye(dim)
+        M[dim-1, :] = 0.5
+        return M
+
+    def forward(self, x):
+        # [batch_size, dim]
+        # Compute f(x), g(x)
+        y1 = torch.round(x)
+        y2 = torch.round(x - 0.5) + 0.5
+        codebooks = torch.stack((y1, y2), dim=1) #[batch_size, 2, dim]
+        scores = torch.stack((torch.linalg.norm(x-y1, dim=1), torch.linalg.norm(x-y2, dim=1)), dim=1) #[batch_size, 2]
+        idx = torch.argmin(scores, dim=1) # [batch_size]
+        y = codebooks[torch.arange(codebooks.shape[0]), idx, :]
+        return y
+    
+class DnDualQuantizerUnitVol(nn.Module):
+    """
+    D_n^* quantizer.
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.dim = dim
+        self.G = self.init_generator_matrix(dim)
+        self.a, self.G = self.make_unit_vol(self.G)
+        self.G = nn.Parameter(self.G, requires_grad=False)
+    
+    def init_generator_matrix(self, dim):
+        """
+        Initialize lattice quantizer's generator matrix.
+        """
+        M = torch.eye(dim)
+        M[dim-1, :] = 0.5
+        return M
+    
+    def make_unit_vol(self, M):
+        n = M.shape[0]
+        vol = torch.sqrt(torch.linalg.det(M @ M.T))
+        a = 1 / (vol ** (1/n))
+        M = a * M
+        return a, M
+
+    def forward(self, x_in):
+        # [batch_size, dim]
+        # Compute f(x), g(x)
+        x = torch.div(x_in, self.a)
+        y1 = torch.round(x)
+        y2 = torch.round(x - 0.5) + 0.5
+        codebooks = torch.stack((y1, y2), dim=1) #[batch_size, 2, dim]
+        scores = torch.stack((torch.linalg.norm(x-y1, dim=1), torch.linalg.norm(x-y2, dim=1)), dim=1) #[batch_size, 2]
+        idx = torch.argmin(scores, dim=1) # [batch_size]
+        y = codebooks[torch.arange(codebooks.shape[0]), idx, :]
+        y = torch.mul(y, self.a)
+        return y
+    
 class E8Quantizer(nn.Module):
     """
     E_8 quantizer, equivalent to E_8^*.

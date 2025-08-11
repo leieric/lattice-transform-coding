@@ -4,10 +4,10 @@ import torch.nn.functional as F
 # torch.set_float32_matmul_precision('medium')
 torch.set_num_threads(4)
 # torch.autograd.set_detect_anomaly(True)
-from layers import LatticeCompander, get_compander
-from train import trainNTC, evalNTC
+from LTC.layers import get_model
+from LTC.train import trainNTC, evalNTC
 from argparse import ArgumentParser
-import data
+import LTC.data as data
 import os
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', default=2, type=int)
     parser.add_argument('--model_name', default='LatticeCompander', type=str)
     parser.add_argument('--data_name', default='Gaussian', type=str)
-    parser.add_argument('--data_root', default='/home/Shared/other_datasets', type=str)
+    parser.add_argument('--data_root', default='./data', type=str)
     parser.add_argument('--lattice_name', default='Hexagonal', type=str)
     parser.add_argument('--transform_name', default='LinearNoBias', type=str)
     parser.add_argument('--eb_name', default='FactorizedPrior', type=str)
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     for lam in args.lam_sweep:
         # model = LatticeCompander(args.n, lattice=args.lattice_name, tname=args.transform_name, eb_name=args.eb_name, N=args.N_integral, MC_method=args.MC_method)
         args.lam = lam
-        model = get_compander(args)
+        model = get_model(args)
         if args.pretrained:
             save_dir = f'trained/{args.data_name}'
             saved = torch.load(f'{save_dir}/{args.model_name}_{args.lattice_name}_{args.transform_name}_{args.eb_name}_n{args.n}_d{args.d}_dy{args.dy}_Nint{args.N_integral}_lam{lam}.pt', map_location='cpu')

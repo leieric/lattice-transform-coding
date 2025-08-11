@@ -8,3 +8,4 @@ saved_lattices/
 wandb/
 trained_compressai/
 rdub/
+data/
