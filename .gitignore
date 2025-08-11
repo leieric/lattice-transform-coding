@@ -1,0 +1,9 @@
+**/__pycache__
+trained/old/
+trained_save/
+deprecated/
+saved_lattices/
+.DS_Store
+wandb/
+trained_compressai/
+rdub/
