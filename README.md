@@ -1,6 +1,6 @@
 # lattice-transform-coding
 
-This is the official code for the ICLR 2025 paper [Approaching Rate-Distortion Limits in Neural Compression with Lattice Transform Coding](https://openreview.net/forum?id=Tv36j85SqR).
+This is the official code for the ICLR 2025 paper [Approaching Rate-Distortion Limits in Neural Compression with Lattice Transform Coding](https://arxiv.org/pdf/2403.07320).
 
 ## Installation
 
