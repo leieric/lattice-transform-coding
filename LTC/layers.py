@@ -2,9 +2,7 @@ import torch.nn as nn
 import torch
 from LTC.entropy_models import EntropyBottleneck, EntropyBottleneckLattice, EntropyBottleneckLatticeFlow
 from typing import cast
-import numpy as np
-from compressai.models.utils import conv, deconv
-from LTC.quantizers import get_lattice, get_generator_matrix
+from LTC.quantizers import get_lattice
 
 def get_model(args):
     if args.model_name == 'NTC':

@@ -6,21 +6,6 @@ import itertools
 import matplotlib.pyplot as plt
 from colorhash import ColorHash
 
-def train_clusters(decoder, optimizer, kmeans, bias=False):
-    losses = []
-    epochs = 10000
-    pbar = tqdm.tqdm(range(epochs), total=epochs)
-    x = torch.from_numpy(kmeans.cluster_centers_)
-    input_cw = torch.tensor(list(itertools.product([-1, 1], repeat=k))).float()
-    print(input_cw.shape, x.shape)
-    for epoch in pbar:
-        xhat = decoder(input_cw)
-        loss = torch.linalg.norm(x-xhat)**2 
-        losses.append(loss.item()/ (x.shape[0]*x.shape[1]))
-        loss.backward()
-        optimizer.step()
-        pbar.set_description(f'Loss={losses[-1]}')
-    return losses
 
 def train(encoder, decoder, act, optimizer, dset, batch_size, device, epochs=20):
     losses = []
@@ -45,35 +30,6 @@ def train(encoder, decoder, act, optimizer, dset, batch_size, device, epochs=20)
         pbar.set_description(f'Loss={np.mean(losses[-100:])}')
     return losses
 
-def trainNTC_old(model, lam, optimizer, aux_optimizer, dset, batch_size, device, epochs=20):
-    DD = []
-    RR = []
-
-    pbar = tqdm.tqdm(range(epochs), total=epochs)
-    for epoch in pbar:
-        dset2 = dset[torch.randperm(1000*batch_size)]
-        for i in range(1000):
-            # x = torch.randn((batch_size, d))
-            x = dset2[i*batch_size:i*batch_size+batch_size]
-            x = x.to(device)
-            # print(x.shape)
-            
-            optimizer.zero_grad()
-            aux_optimizer.zero_grad()
-            xhat, y_lik = model(x)
-            D = torch.linalg.norm(x-xhat)**2  / (x.shape[0]*x.shape[1])
-            R = torch.mean(-torch.log2(y_lik))
-            loss = R + lam * D
-            DD.append(D.item())
-            RR.append(R.item())
-            loss.backward()
-            optimizer.step()
-
-            aux_loss = model.aux_loss()
-            aux_loss.backward()
-            aux_optimizer.step()
-        pbar.set_description(f'R={np.mean(RR[-100:]):.4f}, D={np.mean(DD[-100:]):.4f}')
-    return RR, DD
 
 def trainNTC(model, lam, optimizer, aux_optimizer, loader, eval_loader, device, args, dist_loss=F.mse_loss):
     DD = []
@@ -126,39 +82,6 @@ def trainNTC(model, lam, optimizer, aux_optimizer, loader, eval_loader, device, 
             print(f"Eval rate={r:.4}, dist={d:.4}")
     return RR, DD
 
-# def evalNTC(model, device='cpu', n=20000, d=2):
-#     """
-#     TODO: write function that evals true rate (and distortion). 
-#     Can be called after training a model for a rate sweep
-#     """
-#     bsize = 500
-#     x = torch.randn((n, d), device=device)
-#     xq = []
-#     lik = []
-#     y = []
-#     y_hat = []
-#     for i in tqdm.trange(len(x) // bsize):
-#         xq1, lik1, y1, y_hat1 = model.eval(x[i*bsize:i*bsize+bsize])
-#         xq.append(xq1)
-#         lik.append(lik1)
-#         y.append(y1)
-#         y_hat.append(y_hat1)
-#     x_hat = torch.cat(xq).detach().cpu()
-#     lik = torch.cat(lik).detach().cpu()
-#     y = torch.cat(y).detach().cpu()
-#     y_hat = torch.cat(y_hat).detach().cpu()
-#     x = x.cpu()
-#     C2 = torch.unique(torch.cat((x_hat, y_hat), dim=1), dim=0)
-#     C, C_latent = C2[:,:d], C2[:,d:]
-#     latent_dist = []
-#     for i in tqdm.trange(C_latent.shape[0]):
-#         M = np.all(y_hat.numpy() == C_latent[i, :].numpy(), axis=1)
-#         latent_dist.append(np.sum(M) / len(M)) # append frequency
-#     # print(C, C_latent)
-#     rate = -np.sum(latent_dist * np.log2(latent_dist)) / d
-#     rate_fixed = np.log2(C_latent.shape[0]) / d
-#     distortion = torch.mean((x-x_hat)**2).item()
-#     return rate, distortion, rate_fixed
 
 def evalNTC_true_ent(model, loader, device='cpu', n=20000, d=2):
     """
@@ -229,16 +152,6 @@ def evalNTC_fixed_rate(model, loader, device='cpu', d=2, dist_loss=F.mse_loss, N
     return rate / len(loader), rate_fixed / len(loader), distortion / len(loader)
 
 
-def eval(encoder, decoder, act):
-    with torch.no_grad():
-        n = 1000000
-        x = torch.randn((n, d))
-        z = act(encoder(x))
-        # print(z)
-        xhat = decoder(z)
-        loss = torch.linalg.norm(x-xhat)**2 / (n * d)
-    return loss.item()
-
 
 def plot_quantizer(x, x_hat, y, y_hat):
     C2 = torch.unique(torch.cat((x_hat, y_hat), dim=1), dim=0)
@@ -258,16 +171,7 @@ def plot_quantizer(x, x_hat, y, y_hat):
         # color_i = np.random.rand(3) * 0.5 + 0.5
         color_i = (np.array(ColorHash(C_latent[i,:]).rgb, dtype=float) / 255) * 0.75 + 0.25
         C_colors.append(color_i.tolist())
-    #     plt.scatter(y[M,0], y[M,1], s=2, alpha=0.75, color=color_i)
-    # plt.scatter(C_latent[:, 0], C_latent[:, 1], marker='o', c=np.array(C_colors), edgecolors='black', s=20, label=r'$\hat{Y}$')
-    # ax = plt.gca()
-    # ax.set_aspect('equal')
-    # plt.grid(visible=True)
-    # plt.title('Latent Space')
-    # plt.legend()
-    # plt.show()
 
-    # plt.figure(2, figsize=(6,6))
     plots = []
     for i in range(C.shape[0]):
         M = Ms[i]
@@ -303,39 +207,6 @@ def plot_quantizer2D(x, x_hat):
     ax.set_aspect('equal', adjustable='box')
     plt.grid(visible=True)
     plt.show()
-
-# import meshplot
-# def plot_quantizer3D(x, x_hat):
-#     m = torch.min(x, dim=0)[0].numpy()
-#     ma = torch.max(x, dim=0)[0].numpy()    
-
-#     # Corners of the bounding box
-#     v_box = np.array([[m[0], m[1], m[2]], [ma[0], m[1], m[2]], [ma[0], ma[1], m[2]], [m[0], ma[1], m[2]],
-#                     [m[0], m[1], ma[2]], [ma[0], m[1], ma[2]], [ma[0], ma[1], ma[2]], [m[0], ma[1], ma[2]]])
-
-#     # Edges of the bounding box
-#     f_box = np.array([[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], 
-#                     [7, 4], [0, 4], [1, 5], [2, 6], [7, 3]], dtype=int)
-#     C = torch.unique(x_hat, dim=0)
-
-#     C_colors = []
-#     Ms = []
-#     latent_dist = []
-#     for i in range(C.shape[0]):
-#         M = np.all(x_hat.numpy() == C[i, :].numpy(), axis=1)
-#         Ms.append(M)
-#         # print(np.sum(M) / len(M))
-#         latent_dist.append(np.sum(M) / len(M)) # append frequency
-#         # color_i = np.random.rand(3) * 0.5 + 0.5
-#         color_i = (np.array(ColorHash(C[i,:]).rgb, dtype=float) / 255) * 0.75 + 0.25
-#         C_colors.append(color_i.tolist())
-#     p = meshplot.plot(C.numpy(), c=np.array(C_colors), shading={"point_size": 1, "marker":'o', "edgecolors":'black'}, return_plot=True)
-#     for i in range(C.shape[0]):
-#         M = Ms[i]
-#         c = np.tile(np.array(C_colors[i]), (M.sum(), 1))
-#         p.add_points(x[M].numpy(), c=c, shading={"point_size": 0.12})
-#     p.add_edges(v_box, f_box, shading={"line_color": "red"})
-#     p.add_points(v_box, shading={"point_color": "green"})
 
 
 def trainNTC_with_plot(model, lam, optimizer, aux_optimizer, loader, device, epochs=20, update_freq=10):

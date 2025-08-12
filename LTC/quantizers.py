@@ -20,8 +20,6 @@ def get_lattice(name, d):
         return DnDualQuantizerUnitVol(d)
     elif name == 'E8':
         return E8Quantizer(d)
-    elif name == 'E8_2':
-        return E8ProductQuantizer(d, 2)
     elif name == 'E8Product':
         n_product = d // 8
         print(f"n_product={n_product}")
@@ -34,10 +32,6 @@ def get_lattice(name, d):
         n_product = d // 24
         print(f"n_product={n_product}")
         return Leech2ProductQuantizerUnitVol(d, n_product)
-    elif name == 'Leech128ProductUnitVol':
-        d = 128
-        n_product = 5
-        return Leech128ProductQuantizerUnitVol(d, n_product)
     else:
         raise Exception("Invalid Lattice name")
     
@@ -622,75 +616,6 @@ class Leech2QuantizerUnitVol(nn.Module):
         y = X[torch.arange(bsize, device=x.device), idx_keep, :]
         y = torch.mul(y, self.a)
         return y
-    
-class Leech128ProductQuantizerUnitVol(Leech2QuantizerUnitVol):
-    """
-    Leech quantizer x 5 with one E8
-    """
-    def __init__(self, dim, n_product=5):
-        super().__init__(24)
-        self.n_product = n_product
-        # assert dim == 24 * n_product
-        assert n_product == 5
-        assert dim == 128
-        self.dim = dim
-        Gs = [self.G.data for _ in range(n_product)]
-        Gs.append(get_generator_matrix("E8"))
-        G = torch.block_diag(*Gs)
-        # self.G = self.init_generator_matrix(dim)
-        self.G = nn.Parameter(G, requires_grad=False)
-
-    def _L24_quantize(self, x_in):
-        # [batch_size, 24]
-        x = torch.div(x_in, self.a)
-        bsize = x.shape[0]
-        x1 = x[:, None, 0:8] - self.AT[None, :, :] # [batch_size, 256, 8]
-        x2 = x[:, None, 8:16] - self.AT[None, :, :] # [batch_size, 256, 8]
-        x3 = x[:, None, 16:24] - self.AT[None, :, :] # [batch_size, 256, 8]
-        xx = torch.cat((x1, x2, x3), dim=0) #[3*batch_size, 256, 8]
-        xxq = self._4E8_quantize(xx.reshape(-1, 8)).reshape(-1, 256, 8) + self.AT[None, :, :]
-        xxq = xxq.reshape(3, bsize, 256, 8)
-        pre = torch.cat((xxq[0], xxq[1], xxq[2]), dim=2) # [batch_size, 256, 24]
-        pre = pre.reshape((-1, 16, 16, 24))
-        x1 = pre[:, self.idx_a, self.idx_t, 0:8] # [batch_size, 4096, 8]
-        x2 = pre[:, self.idx_b, self.idx_t, 8:16] # [batch_size, 4096, 8]
-        x3 = pre[:, self.idx_c, self.idx_t, 16:24] # [batch_size, 4096, 8]
-        X = torch.cat((x1, x2, x3), dim=2) # [batch_size, 4096, 24]
-        D = torch.linalg.norm(X - x[:, None, :], dim=2) # [batch_size, 4096]
-        idx_keep = torch.argmin(D, dim=1) # [batch_size]
-        y = X[torch.arange(bsize, device=x.device), idx_keep, :]
-        y = torch.mul(y, self.a)
-        return y
-    
-    def _E8_quantize(self, x):
-        # D_8 quantize x and coset 1/2, choose the closest
-        # [batch_size, dim]
-        y1 = self._D8_quantize(x)
-        y2 = self._D8_quantize(x - 0.5) + 0.5
-        codebooks = torch.stack((y1, y2), dim=1) #[batch_size, 2, dim]
-        scores = torch.stack((torch.linalg.norm(x-y1, dim=1), torch.linalg.norm(x-y2, dim=1)), dim=1) #[batch_size, 2]
-        idx = torch.argmin(scores, dim=1) # [batch_size]
-        y = codebooks[torch.arange(codebooks.shape[0]), idx, :]
-        return y
-    
-    def forward(self, x_in):
-        # x_in: [bsize, 128]
-        # ys = []
-        # for i in range(self.n_product):
-        #     ys.append(self._L24_quantize(x[:, 24*i:24*(i+1)]))
-        # y = torch.cat(ys, dim=1)
-        # return y
-        bsize, dim = x_in.shape
-        x = x_in[:, 0:120].reshape(bsize, self.n_product, 24)
-        x = x.reshape(bsize*self.n_product, 24)
-        x_q = self._L24_quantize(x)
-        x_q = x_q.reshape(bsize, self.n_product, 24)
-        x_q = x_q.reshape(bsize, 24*self.n_product) # [bsize, 120]
-
-        x_last = self._E8_quantize(x_in[:, 120:128]) # [bsize, 8]
-        x_q = torch.cat((x_q, x_last), dim=1)
-        return x_q
-
 
 
 
