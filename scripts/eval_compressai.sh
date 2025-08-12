@@ -25,10 +25,10 @@ python eval_compressai.py pretrained data/Kodak/1 -a "cheng2020-attn" -q 5 --ent
 
 
 # evaluate: finetuned LTC model from NTC weights
-python eval_compressai.py checkpoint /home/Shared/image_datasets/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q1_E8Product_mse_lmbda0.0018_best.pt --lattice_name "E8Product" --channels 128 --N_integral 2048 --cuda
+python eval_compressai.py checkpoint data/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q1_E8Product_mse_lmbda0.0018_best.pt --lattice_name "E8Product" --channels 128 --N_integral 2048 --cuda
 
-python eval_compressai.py checkpoint /home/Shared/image_datasets/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q3_E8Product_mse_lmbda0.0067_best.pt --lattice_name "E8Product" --channels 128 --N_integral 2048 --cuda
+python eval_compressai.py checkpoint data/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q3_E8Product_mse_lmbda0.0067_best.pt --lattice_name "E8Product" --channels 128 --N_integral 2048 --cuda
 
-python eval_compressai.py checkpoint /home/Shared/image_datasets/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q5_E8Product_mse_lmbda0.025_best.pt --lattice_name "E8Product" --channels 192 --N_integral 2048 --cuda
+python eval_compressai.py checkpoint data/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q5_E8Product_mse_lmbda0.025_best.pt --lattice_name "E8Product" --channels 192 --N_integral 2048 --cuda
 
-python eval_compressai.py checkpoint /home/Shared/image_datasets/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q6_E8Product_mse_lmbda0.0483_best.pt --lattice_name "E8Product" --channels 192 --N_integral 2048 --cuda
+python eval_compressai.py checkpoint data/Kodak/1 --entropy-estimation --path trained_compressai/vimeo_septuplet/Cheng2020Lattice_fromNTC_q6_E8Product_mse_lmbda0.0483_best.pt --lattice_name "E8Product" --channels 192 --N_integral 2048 --cuda
